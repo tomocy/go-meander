@@ -1,8 +1,10 @@
 package meander
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -23,8 +25,8 @@ func (q Query) Find(types string) (*googleResponse, error) {
 	endpoint := "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 	vals := make(url.Values)
 	vals.Set("location", fmt.Sprintf("%g,%g", q.Lat, q.Lng))
-	vals.Set("radius", fmt.Sprintf("%d", q.Radius))
-	vals.Set("types", types)
+	vals.Set("radius", "1000")
+	vals.Set("type", types)
 	vals.Set("key", APIKey)
 	if 0 < len(q.CostRangeStr) {
 		costRange := ParseCostRange(q.CostRangeStr)
@@ -32,15 +34,25 @@ func (q Query) Find(types string) (*googleResponse, error) {
 		vals.Set("maxprice", fmt.Sprintf("%d", int(costRange.To)-1))
 	}
 
-	resp, err := http.Get(endpoint + vals.Encode())
+	url := endpoint + "?" + vals.Encode()
+	fmt.Println(url)
+	resp, err := http.Get(url)
 	if err != nil {
+		log.Println("query could not http.Get")
 		return nil, err
 	}
 	defer resp.Body.Close()
 
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
 	var googleResp googleResponse
 	if err := json.NewDecoder(resp.Body).Decode(&googleResp); err != nil {
-		return nil, err
+		if err != io.EOF {
+			log.Println("query could not decode response.Body")
+			return nil, err
+		}
 	}
 
 	return &googleResp, nil
@@ -48,6 +60,7 @@ func (q Query) Find(types string) (*googleResponse, error) {
 
 func (q Query) Run() []interface{} {
 	rand.Seed(time.Now().UnixNano())
+	fmt.Printf("%#v\n", q)
 	var wg sync.WaitGroup
 	places := make([]interface{}, len(q.Journey))
 	for i, j := range q.Journey {
