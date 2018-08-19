@@ -1,7 +1,6 @@
 package meander
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -34,23 +33,17 @@ func (q Query) Find(types string) (*googleResponse, error) {
 		vals.Set("maxprice", fmt.Sprintf("%d", int(costRange.To)-1))
 	}
 
-	url := endpoint + "?" + vals.Encode()
-	fmt.Println(url)
-	resp, err := http.Get(url)
+	resp, err := http.Get(endpoint + "?" + vals.Encode())
 	if err != nil {
 		log.Println("query could not http.Get")
 		return nil, err
 	}
 	defer resp.Body.Close()
+	log.Println(resp.Status)
 
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-	}
 	var googleResp googleResponse
 	if err := json.NewDecoder(resp.Body).Decode(&googleResp); err != nil {
 		if err != io.EOF {
-			log.Println("query could not decode response.Body")
 			return nil, err
 		}
 	}
@@ -60,7 +53,6 @@ func (q Query) Find(types string) (*googleResponse, error) {
 
 func (q Query) Run() []interface{} {
 	rand.Seed(time.Now().UnixNano())
-	fmt.Printf("%#v\n", q)
 	var wg sync.WaitGroup
 	places := make([]interface{}, len(q.Journey))
 	for i, j := range q.Journey {
