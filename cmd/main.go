@@ -10,20 +10,22 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/recommendations", withCORS(func(w http.ResponseWriter, r *http.Request) {
-		urlQuery := r.URL.Query()
-		q := meander.Query{
-			Radius:  1000,
-			Journey: strings.Split(urlQuery.Get("journey"), "|"),
-		}
-		q.Lat, _ = strconv.ParseFloat(urlQuery.Get("lat"), 64)
-		q.Lng, _ = strconv.ParseFloat(urlQuery.Get("lng"), 64)
-		q.Radius, _ = strconv.Atoi(urlQuery.Get("radius"))
-		q.CostRangeStr = urlQuery.Get("cost")
-		places := q.Run()
-		respond(w, places)
-	}))
+	http.HandleFunc("/recommendations", withCORS(handleRecommendations))
 	http.ListenAndServe(":8080", nil)
+}
+
+func handleRecommendations(w http.ResponseWriter, r *http.Request) {
+	urlQuery := r.URL.Query()
+	q := meander.Query{
+		Radius:  1000,
+		Journey: strings.Split(urlQuery.Get("journey"), "|"),
+	}
+	q.Lat, _ = strconv.ParseFloat(urlQuery.Get("lat"), 64)
+	q.Lng, _ = strconv.ParseFloat(urlQuery.Get("lng"), 64)
+	q.Radius, _ = strconv.Atoi(urlQuery.Get("radius"))
+	q.CostRangeStr = urlQuery.Get("cost")
+	places := q.Run()
+	respond(w, places)
 }
 
 func respond(w http.ResponseWriter, data []interface{}) error {
