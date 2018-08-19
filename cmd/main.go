@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/tomocy/meander"
 )
@@ -15,16 +13,8 @@ func main() {
 }
 
 func handleRecommendations(w http.ResponseWriter, r *http.Request) {
-	urlQuery := r.URL.Query()
-	q := meander.Query{
-		Radius:  1000,
-		Journey: strings.Split(urlQuery.Get("journey"), "|"),
-	}
-	q.Lat, _ = strconv.ParseFloat(urlQuery.Get("lat"), 64)
-	q.Lng, _ = strconv.ParseFloat(urlQuery.Get("lng"), 64)
-	q.Radius, _ = strconv.Atoi(urlQuery.Get("radius"))
-	q.CostRangeStr = urlQuery.Get("cost")
-	places := q.Run()
+	query := meander.NewQuery(r.URL.Query())
+	places := query.Run()
 	respond(w, places)
 }
 

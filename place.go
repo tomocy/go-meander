@@ -26,3 +26,9 @@ func (p place) Public() interface{} {
 		"lng":      p.Lng,
 	}
 }
+
+func (p *place) setPhotoURLs() {
+	for _, photo := range p.Photos {
+		photo.URL = "https://maps.googleapis.com/maps/api/place/photo?maxwith=1000" + "&photoreference=" + photo.PhotoRef + "&key=" + APIKey
+	}
+}
