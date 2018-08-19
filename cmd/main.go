@@ -15,5 +15,9 @@ func main() {
 }
 
 func respond(w http.ResponseWriter, data []interface{}) error {
-	return json.NewEncoder(w).Encode(data)
+	publicData := make([]interface{}, len(data))
+	for i, d := range data {
+		publicData[i] = meander.Public(d)
+	}
+	return json.NewEncoder(w).Encode(publicData)
 }
