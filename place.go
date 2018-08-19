@@ -21,3 +21,14 @@ type googleLocation struct {
 	Lat float64 `json:"lat"`
 	Lng float64 `json:"lng"`
 }
+
+func (p place) Public() interface{} {
+	return map[string]interface{}{
+		"name":     p.Name,
+		"icon":     p.Icon,
+		"vicinity": p.Vicinity,
+		"photos":   p.Photos,
+		"lat":      p.Lat,
+		"lng":      p.Lng,
+	}
+}
