@@ -1,9 +1,6 @@
 package meander
 
-type j struct {
-	Name       string
-	PlaceTypes []string
-}
+import "strings"
 
 // Journeys is a slice of an arrary of interfaces which represents several journeys
 var Journeys = []interface{}{
@@ -41,4 +38,16 @@ var Journeys = []interface{}{
 			"hair_care", "beauty_salon", "cafe", "spa",
 		},
 	},
+}
+
+type j struct {
+	Name       string
+	PlaceTypes []string
+}
+
+func (j j) Public() interface{} {
+	return map[string]interface{}{
+		"name":     j.Name,
+		"journeys": strings.Join(j.PlaceTypes, "|"),
+	}
 }
