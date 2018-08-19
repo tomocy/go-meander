@@ -10,9 +10,6 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/journeys", withCORS(func(w http.ResponseWriter, r *http.Request) {
-		respond(w, meander.Journeys)
-	}))
 	http.HandleFunc("/recommendations", withCORS(func(w http.ResponseWriter, r *http.Request) {
 		urlQuery := r.URL.Query()
 		q := meander.Query{
