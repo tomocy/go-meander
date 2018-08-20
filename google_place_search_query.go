@@ -16,28 +16,28 @@ import (
 )
 
 type googlePlaceSearchQuery struct {
-	Lat          float64
-	Lng          float64
-	Journeys     []string
-	Radius       int
-	CostRangeStr string
+	lat          float64
+	lng          float64
+	journeys     []string
+	radius       int
+	costRangeStr string
 }
 
 func newGooglePlaceSearchQuery(vals url.Values) *googlePlaceSearchQuery {
 	q := new(googlePlaceSearchQuery)
-	q.Journeys = strings.Split(vals.Get("journey"), "|")
-	q.Lat, _ = strconv.ParseFloat(vals.Get("lat"), 64)
-	q.Lng, _ = strconv.ParseFloat(vals.Get("lng"), 64)
-	q.Radius, _ = strconv.Atoi(vals.Get("radius"))
-	q.CostRangeStr = vals.Get("cost")
+	q.journeys = strings.Split(vals.Get("journey"), "|")
+	q.lat, _ = strconv.ParseFloat(vals.Get("lat"), 64)
+	q.lng, _ = strconv.ParseFloat(vals.Get("lng"), 64)
+	q.radius, _ = strconv.Atoi(vals.Get("radius"))
+	q.costRangeStr = vals.Get("cost")
 
 	return q
 }
 
 func (q googlePlaceSearchQuery) Run() []interface{} {
 	var wg sync.WaitGroup
-	placesCh := make(chan interface{}, len(q.Journeys))
-	for _, journey := range q.Journeys {
+	placesCh := make(chan interface{}, len(q.journeys))
+	for _, journey := range q.journeys {
 		wg.Add(1)
 		go q.findAndDeliverPlaceRandomly(placesCh, journey, wg.Done)
 	}
@@ -92,12 +92,12 @@ func (q googlePlaceSearchQuery) find(journey string) (*googleResponse, error) {
 
 func (q googlePlaceSearchQuery) prepareURLValuesForGooglePlaceSearch(journy string) url.Values {
 	vals := make(url.Values)
-	vals.Set("location", fmt.Sprintf("%g,%g", q.Lat, q.Lng))
-	vals.Set("radius", fmt.Sprintf("%d", q.Radius))
+	vals.Set("location", fmt.Sprintf("%g,%g", q.lat, q.lng))
+	vals.Set("radius", fmt.Sprintf("%d", q.radius))
 	vals.Set("type", journy)
 	vals.Set("key", APIKey)
-	if 0 < len(q.CostRangeStr) {
-		costRange := parseCostRange(q.CostRangeStr)
+	if 0 < len(q.costRangeStr) {
+		costRange := parseCostRange(q.costRangeStr)
 		vals.Set("minprice", fmt.Sprintf("%d", int(costRange.from)-1))
 		vals.Set("maxprice", fmt.Sprintf("%d", int(costRange.to)-1))
 	}
