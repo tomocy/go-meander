@@ -1,6 +1,7 @@
 package meander
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,12 +34,35 @@ func NewQuery(vals url.Values) *Query {
 	return q
 }
 
-func (q Query) Find(types string) (*googleResponse, error) {
-	endpoint := "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+func (q Query) Find(journey string) (*googleResponse, error) {
+	vals := q.prepareURLValuesForGooglePlaceSearch(journey)
+	resp, err := makeRequestForGooglePlaceSearch(vals.Encode())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+	log.Println(resp.Status)
+
+	var googleResp googleResponse
+	decode(resp.Body, &googleResp)
+
+	for _, result := range googleResp.Results {
+		result.setPhotoURLs()
+	}
+
+	return &googleResp, nil
+}
+
+func (q Query) prepareURLValuesForGooglePlaceSearch(journy string) url.Values {
 	vals := make(url.Values)
 	vals.Set("location", fmt.Sprintf("%g,%g", q.Lat, q.Lng))
 	vals.Set("radius", fmt.Sprintf("%d", q.Radius))
-	vals.Set("type", types)
+	vals.Set("type", journy)
 	vals.Set("key", APIKey)
 	if 0 < len(q.CostRangeStr) {
 		costRange := ParseCostRange(q.CostRangeStr)
@@ -46,53 +70,67 @@ func (q Query) Find(types string) (*googleResponse, error) {
 		vals.Set("maxprice", fmt.Sprintf("%d", int(costRange.To)-1))
 	}
 
-	resp, err := http.Get(endpoint + "?" + vals.Encode())
+	return vals
+}
+
+func makeRequestForGooglePlaceSearch(encodedVals string) (*http.Response, error) {
+	endpoint := "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+	resp, err := http.Get(endpoint + "?" + encodedVals)
 	if err != nil {
-		log.Println("query could not http.Get")
 		return nil, err
 	}
-	defer resp.Body.Close()
-	log.Println(resp.Status)
 
-	var googleResp googleResponse
-	if err := json.NewDecoder(resp.Body).Decode(&googleResp); err != nil {
+	return resp, nil
+}
+
+func decode(r io.Reader, data interface{}) error {
+	if err := json.NewDecoder(r).Decode(data); err != nil {
 		if err != io.EOF {
-			return nil, err
+			return err
 		}
 	}
-
-	return &googleResp, nil
+	return nil
 }
 
 func (q Query) Run() []interface{} {
-	rand.Seed(time.Now().UnixNano())
 	var wg sync.WaitGroup
-	places := make([]interface{}, len(q.Journeys))
-	for i, journey := range q.Journeys {
+	placesCh := make(chan interface{}, len(q.Journeys))
+	for _, journey := range q.Journeys {
 		wg.Add(1)
-		go func(journey string, i int) {
-			defer wg.Done()
-			resp, err := q.Find(journey)
-			if err != nil {
-				log.Printf("could not search places: %s\n", err)
-				places = append(places[:i], places[i+1:])
-				return
-			}
-			if len(resp.Results) == 0 {
-				log.Println("no results")
-				places = append(places[:i], places[i+1:])
-				return
-			}
+		go q.findAndDeliverPlaceRandomly(placesCh, journey, wg.Done)
+	}
+	wg.Wait()
+	close(placesCh)
 
-			places[i] = pickResultRandomly(resp.Results)
-		}(journey, i)
+	return receivePlaces(placesCh)
+}
+
+func (q Query) findAndDeliverPlaceRandomly(placeCh chan<- interface{}, journey string, deferF func()) {
+	defer deferF()
+	resp, err := q.Find(journey)
+	if err != nil {
+		log.Printf("could not search places: %s\n", err)
+		return
+	}
+	if len(resp.Results) == 0 {
+		log.Println("no results")
+		return
 	}
 
-	wg.Wait()
-	return places
+	placeCh <- pickResultRandomly(resp.Results)
 }
 
 func pickResultRandomly(results []*place) *place {
+	rand.Seed(time.Now().UnixNano())
 	n := rand.Intn(len(results))
 	return results[n]
+}
+
+func receivePlaces(placesCh <-chan interface{}) []interface{} {
+	places := make([]interface{}, 0)
+	for place := range placesCh {
+		places = append(places, place)
+	}
+
+	return places
 }
