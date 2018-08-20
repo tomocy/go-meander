@@ -1,10 +1,8 @@
-package meander_test
+package meander
 
 import (
 	"reflect"
 	"testing"
-
-	"github.com/tomocy/meander"
 )
 
 func TestCostValue(t *testing.T) {
@@ -18,31 +16,31 @@ func TestCostValue(t *testing.T) {
 }
 
 func getCostValueTestCases() []struct {
-	in   meander.Cost
+	in   cost
 	want int
 } {
 	return []struct {
-		in   meander.Cost
+		in   cost
 		want int
 	}{
 		{
-			in:   meander.Cost1,
+			in:   cost1,
 			want: 1,
 		},
 		{
-			in:   meander.Cost2,
+			in:   cost2,
 			want: 2,
 		},
 		{
-			in:   meander.Cost3,
+			in:   cost3,
 			want: 3,
 		},
 		{
-			in:   meander.Cost4,
+			in:   cost4,
 			want: 4,
 		},
 		{
-			in:   meander.Cost5,
+			in:   cost5,
 			want: 5,
 		},
 	}
@@ -51,7 +49,7 @@ func getCostValueTestCases() []struct {
 func TestCostString(t *testing.T) {
 	thens := getCostStringTestCases()
 	for _, then := range thens {
-		have := then.in.String()
+		have := then.in.string()
 		if have != then.want {
 			t.Errorf("have %s, but want %s", have, then.want)
 		}
@@ -59,31 +57,31 @@ func TestCostString(t *testing.T) {
 }
 
 func getCostStringTestCases() []struct {
-	in   meander.Cost
+	in   cost
 	want string
 } {
 	return []struct {
-		in   meander.Cost
+		in   cost
 		want string
 	}{
 		{
-			in:   meander.Cost1,
+			in:   cost1,
 			want: "$",
 		},
 		{
-			in:   meander.Cost2,
+			in:   cost2,
 			want: "$$",
 		},
 		{
-			in:   meander.Cost3,
+			in:   cost3,
 			want: "$$$",
 		},
 		{
-			in:   meander.Cost4,
+			in:   cost4,
 			want: "$$$$",
 		},
 		{
-			in:   meander.Cost5,
+			in:   cost5,
 			want: "$$$$$",
 		},
 	}
@@ -92,7 +90,7 @@ func getCostStringTestCases() []struct {
 func TestParseCost(t *testing.T) {
 	thens := getParseCostTestCases()
 	for _, then := range thens {
-		have := meander.ParseCost(then.in)
+		have := parseCost(then.in)
 		if have != then.want {
 			t.Errorf("have %d, but want %d", have, then.want)
 		}
@@ -101,31 +99,31 @@ func TestParseCost(t *testing.T) {
 
 func getParseCostTestCases() []struct {
 	in   string
-	want meander.Cost
+	want cost
 } {
 	return []struct {
 		in   string
-		want meander.Cost
+		want cost
 	}{
 		{
 			in:   "$",
-			want: meander.Cost1,
+			want: cost1,
 		},
 		{
 			in:   "$$",
-			want: meander.Cost2,
+			want: cost2,
 		},
 		{
 			in:   "$$$",
-			want: meander.Cost3,
+			want: cost3,
 		},
 		{
 			in:   "$$$$",
-			want: meander.Cost4,
+			want: cost4,
 		},
 		{
 			in:   "$$$$$",
-			want: meander.Cost5,
+			want: cost5,
 		},
 	}
 }
@@ -133,7 +131,7 @@ func getParseCostTestCases() []struct {
 func TestCostRangeString(t *testing.T) {
 	thens := getCostRangeStringTestCases()
 	for _, then := range thens {
-		have := then.in.String()
+		have := then.in.string()
 		if have != then.want {
 			t.Errorf("have %s, but want %s", have, then.want)
 		}
@@ -141,24 +139,24 @@ func TestCostRangeString(t *testing.T) {
 }
 
 func getCostRangeStringTestCases() []struct {
-	in   meander.CostRange
+	in   costRange
 	want string
 } {
 	return []struct {
-		in   meander.CostRange
+		in   costRange
 		want string
 	}{
 		{
-			in: meander.CostRange{
-				From: meander.Cost3,
-				To:   meander.Cost4,
+			in: costRange{
+				from: cost3,
+				to:   cost4,
 			},
 			want: "$$$...$$$$",
 		},
 		{
-			in: meander.CostRange{
-				From: meander.Cost2,
-				To:   meander.Cost5,
+			in: costRange{
+				from: cost2,
+				to:   cost5,
 			},
 			want: "$$...$$$$$",
 		},
@@ -168,7 +166,7 @@ func getCostRangeStringTestCases() []struct {
 func TestParseCostRange(t *testing.T) {
 	thens := getParseCostRangeTestCases()
 	for _, then := range thens {
-		have := meander.ParseCostRange(then.in)
+		have := parseCostRange(then.in)
 		if !reflect.DeepEqual(*have, then.want) {
 			t.Errorf("have %#v, but want %#v", *have, then.want)
 		}
@@ -177,24 +175,24 @@ func TestParseCostRange(t *testing.T) {
 
 func getParseCostRangeTestCases() []struct {
 	in   string
-	want meander.CostRange
+	want costRange
 } {
 	return []struct {
 		in   string
-		want meander.CostRange
+		want costRange
 	}{
 		{
 			in: "$$...$$$",
-			want: meander.CostRange{
-				From: meander.Cost2,
-				To:   meander.Cost3,
+			want: costRange{
+				from: cost2,
+				to:   cost3,
 			},
 		},
 		{
 			in: "$...$$$$$",
-			want: meander.CostRange{
-				From: meander.Cost1,
-				To:   meander.Cost5,
+			want: costRange{
+				from: cost1,
+				to:   cost5,
 			},
 		},
 	}

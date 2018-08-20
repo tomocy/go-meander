@@ -55,7 +55,7 @@ func (q Query) findAndDeliverPlaceRandomly(placeCh chan<- interface{}, journey s
 		return
 	}
 	if len(resp.Results) == 0 {
-		log.Println("no results")
+		log.Println("no results, may be rate limit")
 		return
 	}
 
@@ -77,7 +77,11 @@ func (q Query) find(journey string) (*googleResponse, error) {
 	log.Println(resp.Status)
 
 	var googleResp googleResponse
-	decode(resp.Body, &googleResp)
+	if err := json.NewDecoder(resp.Body).Decode(&googleResp); err != nil {
+		if err != io.EOF {
+			return nil, err
+		}
+	}
 
 	for _, result := range googleResp.Results {
 		result.setPhotoURLs()
@@ -93,9 +97,9 @@ func (q Query) prepareURLValuesForGooglePlaceSearch(journy string) url.Values {
 	vals.Set("type", journy)
 	vals.Set("key", APIKey)
 	if 0 < len(q.CostRangeStr) {
-		costRange := ParseCostRange(q.CostRangeStr)
-		vals.Set("minprice", fmt.Sprintf("%d", int(costRange.From)-1))
-		vals.Set("maxprice", fmt.Sprintf("%d", int(costRange.To)-1))
+		costRange := parseCostRange(q.CostRangeStr)
+		vals.Set("minprice", fmt.Sprintf("%d", int(costRange.from)-1))
+		vals.Set("maxprice", fmt.Sprintf("%d", int(costRange.to)-1))
 	}
 
 	return vals
@@ -112,7 +116,7 @@ func makeRequestForGooglePlaceSearch(encodedVals string) (*http.Response, error)
 }
 
 func decode(r io.Reader, data interface{}) error {
-	if err := json.NewDecoder(r).Decode(data); err != nil {
+	if err := json.NewDecoder(r).Decode(&data); err != nil {
 		if err != io.EOF {
 			return err
 		}

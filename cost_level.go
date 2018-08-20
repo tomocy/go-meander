@@ -2,26 +2,26 @@ package meander
 
 import "strings"
 
-type Cost int8
+type cost int8
 
 const (
-	_ Cost = iota
-	Cost1
-	Cost2
-	Cost3
-	Cost4
-	Cost5
+	_ cost = iota
+	cost1
+	cost2
+	cost3
+	cost4
+	cost5
 )
 
-var costStrings = map[string]Cost{
-	"$":     Cost1,
-	"$$":    Cost2,
-	"$$$":   Cost3,
-	"$$$$":  Cost4,
-	"$$$$$": Cost5,
+var costStrings = map[string]cost{
+	"$":     cost1,
+	"$$":    cost2,
+	"$$$":   cost3,
+	"$$$$":  cost4,
+	"$$$$$": cost5,
 }
 
-func (c Cost) String() string {
+func (c cost) string() string {
 	for k, v := range costStrings {
 		if v == c {
 			return k
@@ -31,23 +31,23 @@ func (c Cost) String() string {
 	return "UNKNOWN"
 }
 
-func ParseCost(s string) Cost {
+func parseCost(s string) cost {
 	return costStrings[s]
 }
 
-type CostRange struct {
-	From Cost
-	To   Cost
+type costRange struct {
+	from cost
+	to   cost
 }
 
-func (cr CostRange) String() string {
-	return cr.From.String() + "..." + cr.To.String()
+func (cr costRange) string() string {
+	return cr.from.string() + "..." + cr.to.string()
 }
 
-func ParseCostRange(s string) *CostRange {
+func parseCostRange(s string) *costRange {
 	ss := strings.Split(s, "...")
-	return &CostRange{
-		From: ParseCost(ss[0]),
-		To:   ParseCost(ss[1]),
+	return &costRange{
+		from: parseCost(ss[0]),
+		to:   parseCost(ss[1]),
 	}
 }
