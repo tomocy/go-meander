@@ -1,5 +1,7 @@
 package meander
 
+import "fmt"
+
 type googlePlacesAPIResponse struct {
 	Places []*googlePlace `json:"results"`
 	Status string         `json:"status"`
@@ -25,4 +27,6 @@ func (p *googlePlace) setPhotoURLs() {
 	for _, photo := range p.Photos {
 		photo.URL = "https://maps.googleapis.com/maps/api/place/photo?maxwith=1000" + "&photoreference=" + photo.Reference + "&key=" + googlePlacesAPIKey
 	}
+
+	fmt.Println("%#v\n", p)
 }

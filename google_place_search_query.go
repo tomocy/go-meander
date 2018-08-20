@@ -127,8 +127,8 @@ func makeRequestForGooglePlaceSearch(encodedVals string) (*http.Response, error)
 
 func decodeToGooglePlaceSearchResponse(r io.Reader, data *googlePlacesAPIResponse) error {
 	decode(r, data)
-	for _, place := range data.Places {
-		place.setPhotoURLs()
+	for i := 0; i < len(data.Places); i++ {
+		data.Places[i].setPhotoURLs()
 	}
 
 	return nil
