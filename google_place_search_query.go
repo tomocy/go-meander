@@ -1,8 +1,8 @@
 package meander
 
 import (
-	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -54,15 +54,31 @@ func (q googlePlaceSearchQuery) findAndDeliverPlaceRandomly(placeCh chan<- inter
 		log.Printf("could not search places: %s\n", err)
 		return
 	}
-	if len(resp.Results) == 0 {
-		log.Println("no results, may be rate limit")
+
+	if len(resp.Places) == 0 {
+		log.Println("no results")
 		return
 	}
 
-	placeCh <- pickResultRandomly(resp.Results)
+	placeCh <- pickPlaceRandomly(resp.Places)
 }
 
-func (q googlePlaceSearchQuery) find(journey string) (*googleResponse, error) {
+func pickPlaceRandomly(places []*googlePlace) *googlePlace {
+	rand.Seed(time.Now().UnixNano())
+	n := rand.Intn(len(places))
+	return places[n]
+}
+
+func receivePlaces(placesCh <-chan interface{}) []interface{} {
+	places := make([]interface{}, 0)
+	for place := range placesCh {
+		places = append(places, place)
+	}
+
+	return places
+}
+
+func (q googlePlaceSearchQuery) find(journey string) (*googlePlaceSearchResponse, error) {
 	vals := q.prepareURLValuesForGooglePlaceSearch(journey)
 	resp, err := makeRequestForGooglePlaceSearch(vals.Encode())
 	if err != nil {
@@ -70,22 +86,16 @@ func (q googlePlaceSearchQuery) find(journey string) (*googleResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-	}
-	log.Println(resp.Status)
-
-	var googleResp googleResponse
-	if err := json.NewDecoder(resp.Body).Decode(&googleResp); err != nil {
+	var googleResp googlePlaceSearchResponse
+	if err := decodeToGooglePlaceSearchResponse(resp.Body, &googleResp); err != nil {
 		if err != io.EOF {
 			return nil, err
 		}
 	}
 
-	// for _, result := range googleResp.Results {
-	// 	result.setPhotoURLs()
-	// }
+	if googleResp.Status != "OK" {
+		return nil, errors.New(googleResp.Status)
+	}
 
 	return &googleResp, nil
 }
@@ -115,26 +125,21 @@ func makeRequestForGooglePlaceSearch(encodedVals string) (*http.Response, error)
 	return resp, nil
 }
 
+func decodeToGooglePlaceSearchResponse(r io.Reader, data *googlePlaceSearchResponse) error {
+	decode(r, data)
+	for _, place := range data.Places {
+		place.setPhotoURLs()
+	}
+
+	return nil
+}
+
 func decode(r io.Reader, data interface{}) error {
-	if err := json.NewDecoder(r).Decode(&data); err != nil {
+	if err := json.NewDecoder(r).Decode(data); err != nil {
 		if err != io.EOF {
 			return err
 		}
 	}
+
 	return nil
-}
-
-func pickResultRandomly(results []*place) *place {
-	rand.Seed(time.Now().UnixNano())
-	n := rand.Intn(len(results))
-	return results[n]
-}
-
-func receivePlaces(placesCh <-chan interface{}) []interface{} {
-	places := make([]interface{}, 0)
-	for place := range placesCh {
-		places = append(places, place)
-	}
-
-	return places
 }
