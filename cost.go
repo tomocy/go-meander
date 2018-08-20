@@ -5,7 +5,7 @@ import "strings"
 type cost int8
 
 const (
-	_ cost = iota
+	unknownCost cost = iota
 	cost1
 	cost2
 	cost3
@@ -13,26 +13,26 @@ const (
 	cost5
 )
 
-var costStrings = map[string]cost{
-	"$":     cost1,
-	"$$":    cost2,
-	"$$$":   cost3,
-	"$$$$":  cost4,
-	"$$$$$": cost5,
+var costStrings = map[cost]string{
+	cost1: "$",
+	cost2: "$$",
+	cost3: "$$$",
+	cost4: "$$$$",
+	cost5: "$$$$$",
 }
 
 func (c cost) string() string {
-	for k, v := range costStrings {
-		if v == c {
-			return k
-		}
-	}
-
-	return "UNKNOWN"
+	return costStrings[c]
 }
 
 func parseCost(s string) cost {
-	return costStrings[s]
+	for cost, costStr := range costStrings {
+		if costStr == s {
+			return cost
+		}
+	}
+
+	return unknownCost
 }
 
 type costRange struct {
