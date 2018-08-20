@@ -19,11 +19,7 @@ func handleRecommendations(w http.ResponseWriter, r *http.Request) {
 }
 
 func respond(w http.ResponseWriter, data []interface{}) error {
-	publicData := make([]interface{}, len(data))
-	for i, d := range data {
-		publicData[i] = meander.Public(d)
-	}
-	return json.NewEncoder(w).Encode(publicData)
+	return json.NewEncoder(w).Encode(meander.MakePublic(data))
 }
 
 func withCORS(f http.HandlerFunc) http.HandlerFunc {
