@@ -1,6 +1,6 @@
 package meander
 
-type googlePlaceSearchResponse struct {
+type googlePlacesAPIResponse struct {
 	Places []*googlePlace `json:"results"`
 	Status string         `json:"status"`
 }

@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-type googlePlaceSearchQuery struct {
+type googlePlacesAPIQuery struct {
 	lat          float64
 	lng          float64
 	journeys     []string
@@ -23,8 +23,8 @@ type googlePlaceSearchQuery struct {
 	costRangeStr string
 }
 
-func newGooglePlaceSearchQuery(vals url.Values) *googlePlaceSearchQuery {
-	q := new(googlePlaceSearchQuery)
+func newGooglePlaceSearchQuery(vals url.Values) *googlePlacesAPIQuery {
+	q := new(googlePlacesAPIQuery)
 	q.journeys = strings.Split(vals.Get("journey"), "|")
 	q.lat, _ = strconv.ParseFloat(vals.Get("lat"), 64)
 	q.lng, _ = strconv.ParseFloat(vals.Get("lng"), 64)
@@ -34,7 +34,7 @@ func newGooglePlaceSearchQuery(vals url.Values) *googlePlaceSearchQuery {
 	return q
 }
 
-func (q googlePlaceSearchQuery) Run() []interface{} {
+func (q googlePlacesAPIQuery) Run() []interface{} {
 	var wg sync.WaitGroup
 	placesCh := make(chan interface{}, len(q.journeys))
 	for _, journey := range q.journeys {
@@ -47,7 +47,7 @@ func (q googlePlaceSearchQuery) Run() []interface{} {
 	return receivePlaces(placesCh)
 }
 
-func (q googlePlaceSearchQuery) findAndDeliverPlaceRandomly(placeCh chan<- interface{}, journey string, deferF func()) {
+func (q googlePlacesAPIQuery) findAndDeliverPlaceRandomly(placeCh chan<- interface{}, journey string, deferF func()) {
 	defer deferF()
 	resp, err := q.find(journey)
 	if err != nil {
@@ -78,7 +78,7 @@ func receivePlaces(placesCh <-chan interface{}) []interface{} {
 	return places
 }
 
-func (q googlePlaceSearchQuery) find(journey string) (*googlePlaceSearchResponse, error) {
+func (q googlePlacesAPIQuery) find(journey string) (*googlePlacesAPIResponse, error) {
 	vals := q.prepareURLValuesForGooglePlaceSearch(journey)
 	resp, err := makeRequestForGooglePlaceSearch(vals.Encode())
 	if err != nil {
@@ -86,7 +86,7 @@ func (q googlePlaceSearchQuery) find(journey string) (*googlePlaceSearchResponse
 	}
 	defer resp.Body.Close()
 
-	var googleResp googlePlaceSearchResponse
+	var googleResp googlePlacesAPIResponse
 	if err := decodeToGooglePlaceSearchResponse(resp.Body, &googleResp); err != nil {
 		if err != io.EOF {
 			return nil, err
@@ -100,7 +100,7 @@ func (q googlePlaceSearchQuery) find(journey string) (*googlePlaceSearchResponse
 	return &googleResp, nil
 }
 
-func (q googlePlaceSearchQuery) prepareURLValuesForGooglePlaceSearch(journy string) url.Values {
+func (q googlePlacesAPIQuery) prepareURLValuesForGooglePlaceSearch(journy string) url.Values {
 	vals := make(url.Values)
 	vals.Set("location", fmt.Sprintf("%g,%g", q.lat, q.lng))
 	vals.Set("radius", fmt.Sprintf("%d", q.radius))
@@ -125,7 +125,7 @@ func makeRequestForGooglePlaceSearch(encodedVals string) (*http.Response, error)
 	return resp, nil
 }
 
-func decodeToGooglePlaceSearchResponse(r io.Reader, data *googlePlaceSearchResponse) error {
+func decodeToGooglePlaceSearchResponse(r io.Reader, data *googlePlacesAPIResponse) error {
 	decode(r, data)
 	for _, place := range data.Places {
 		place.setPhotoURLs()
