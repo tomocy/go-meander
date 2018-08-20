@@ -22,7 +22,7 @@ type googlePlace struct {
 }
 
 func (p *googlePlace) setPhotoURLs() {
-	for _, photo := range p.Photos {
-		photo.URL = "https://maps.googleapis.com/maps/api/place/photo?maxwith=1000" + "&photoreference=" + photo.Reference + "&key=" + googlePlacesAPIKey
+	for i := 0; i < len(p.Photos); i++ {
+		p.Photos[i].URL = "https://maps.googleapis.com/maps/api/place/photo?maxwith=1000&photoreference=" + p.Photos[i].Reference + "&key=" + googlePlacesAPIKey
 	}
 }
