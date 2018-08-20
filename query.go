@@ -34,7 +34,35 @@ func NewQuery(vals url.Values) *Query {
 	return q
 }
 
-func (q Query) Find(journey string) (*googleResponse, error) {
+func (q Query) Run() []interface{} {
+	var wg sync.WaitGroup
+	placesCh := make(chan interface{}, len(q.Journeys))
+	for _, journey := range q.Journeys {
+		wg.Add(1)
+		go q.findAndDeliverPlaceRandomly(placesCh, journey, wg.Done)
+	}
+	wg.Wait()
+	close(placesCh)
+
+	return receivePlaces(placesCh)
+}
+
+func (q Query) findAndDeliverPlaceRandomly(placeCh chan<- interface{}, journey string, deferF func()) {
+	defer deferF()
+	resp, err := q.find(journey)
+	if err != nil {
+		log.Printf("could not search places: %s\n", err)
+		return
+	}
+	if len(resp.Results) == 0 {
+		log.Println("no results")
+		return
+	}
+
+	placeCh <- pickResultRandomly(resp.Results)
+}
+
+func (q Query) find(journey string) (*googleResponse, error) {
 	vals := q.prepareURLValuesForGooglePlaceSearch(journey)
 	resp, err := makeRequestForGooglePlaceSearch(vals.Encode())
 	if err != nil {
@@ -90,34 +118,6 @@ func decode(r io.Reader, data interface{}) error {
 		}
 	}
 	return nil
-}
-
-func (q Query) Run() []interface{} {
-	var wg sync.WaitGroup
-	placesCh := make(chan interface{}, len(q.Journeys))
-	for _, journey := range q.Journeys {
-		wg.Add(1)
-		go q.findAndDeliverPlaceRandomly(placesCh, journey, wg.Done)
-	}
-	wg.Wait()
-	close(placesCh)
-
-	return receivePlaces(placesCh)
-}
-
-func (q Query) findAndDeliverPlaceRandomly(placeCh chan<- interface{}, journey string, deferF func()) {
-	defer deferF()
-	resp, err := q.Find(journey)
-	if err != nil {
-		log.Printf("could not search places: %s\n", err)
-		return
-	}
-	if len(resp.Results) == 0 {
-		log.Println("no results")
-		return
-	}
-
-	placeCh <- pickResultRandomly(resp.Results)
 }
 
 func pickResultRandomly(results []*place) *place {
