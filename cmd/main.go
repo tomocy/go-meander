@@ -13,7 +13,7 @@ func main() {
 }
 
 func handleRecommendations(w http.ResponseWriter, r *http.Request) {
-	query := meander.NewQuery(r.URL.Query())
+	query := meander.NewPlaceSearchQuery(r.URL.Query())
 	places := query.Run()
 	respond(w, places)
 }
