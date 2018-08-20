@@ -105,7 +105,7 @@ func (q googlePlaceSearchQuery) prepareURLValuesForGooglePlaceSearch(journy stri
 	vals.Set("location", fmt.Sprintf("%g,%g", q.lat, q.lng))
 	vals.Set("radius", fmt.Sprintf("%d", q.radius))
 	vals.Set("type", journy)
-	vals.Set("key", APIKey)
+	vals.Set("key", googlePlacesAPIKey)
 	if 0 < len(q.costRangeStr) {
 		costRange := parseCostRange(q.costRangeStr)
 		vals.Set("minprice", fmt.Sprintf("%d", int(costRange.from)-1))
